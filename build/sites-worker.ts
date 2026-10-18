@@ -17,7 +17,7 @@ export default {
       request = result.request!;
       // Admin checks use only identity headers injected after Supabase verification.
       const authorized = request.headers.get("oai-authenticated-user-id") === "2496b48a-6d9e-4151-aa05-7a01fbbb38df" && request.headers.get("oai-authenticated-user-email")?.toLowerCase() === "ftmotiondesign@gmail.com";
-      if ((/^\/yonetim(\/|$)/.test(path) || hotelWrite) && !authorized) return new Response("Yönetici yetkisi gerekiyor.", { status: 403, headers: { "Cache-Control": "no-store" } });
+      if ((/^\/yonetim(\/|$)/.test(path) || hotelWrite) && !authorized) return path.startsWith("/api/") ? Response.json({error:"Yönetici oturumu bulunamadı veya süresi doldu. Google ile yeniden giriş yapın.",code:"ADMIN_AUTH_REQUIRED"},{status:403,headers:{"Cache-Control":"no-store"}}) : new Response("Yönetici yetkisi gerekiyor.", { status: 403, headers: { "Cache-Control": "no-store" } });
     }
     let binding = ctx.props?.CONNECTORS;
     if (import.meta.env.DEV && !binding && env.CONNECTORS) {
