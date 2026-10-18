@@ -10,7 +10,7 @@ export default {
       const path = new URL(request.url).pathname;
       if (/^\/(personel|ortaklik|davet)(\/|$)/.test(path)) return new Response("Yönetim girişi test sürümünde geçici olarak kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
       const write = !["GET", "HEAD", "OPTIONS"].includes(request.method);
-      const hotelWrite = request.method === "POST" && (path === "/api/explore-hotels" || path === "/api/platform-announcements");
+      const hotelWrite = request.method === "POST" && (path === "/api/explore-hotels" || path === "/api/platform-announcements" || path === "/api/platform-control");
       if (write && !hotelWrite && !(request.method === "POST" && path === "/cikis")) return new Response("Test sürümünde diğer değişiklik işlemleri kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
       const result = await independentAuth(request, env);
       if (result.response) return result.response;
