@@ -1,0 +1,12 @@
+(()=>{
+const q=new URLSearchParams(location.search),hotel=q.get('otel')||'kiyi-evi',main=hotel==='kiyi-evi',path=location.pathname;
+if(['/personel','/yonetim','/ortaklik'].some(p=>path.startsWith(p)))return;
+const suffix='?'+q.toString(),nav=document.createElement('nav');nav.className='guest-menu';nav.setAttribute('aria-label','Misafir menüsü');document.body.classList.add('has-guest-menu');document.body.append(nav);
+function render(){const en=(document.querySelector('#language,#explore-language,#sponsor-language')?.value||'tr')==='en';const items=[['⌂','Ana sayfa','Home','/'+suffix,'home'],['⌖','Keşfet','Explore','/kesfet'+suffix+'#explore-geography','explore'],['◎','Sponsorlar','Sponsors','/firsatlar'+suffix,'sponsors'],['☷','Taleplerim','My requests','/taleplerim'+suffix,'requests'],['♡','Talep oluştur','New request','/'+suffix+'&talep=1','request']];nav.innerHTML=items.map(([icon,tr,eng,url,key])=>'<a href="'+url+'" data-menu="'+key+'"'+((key==='home'&&path==='/'||key==='explore'&&path==='/kesfet'||key==='sponsors'&&path==='/firsatlar'||key==='requests'&&path==='/taleplerim')?' aria-current="page"':'')+'><span aria-hidden="true">'+icon+'</span><small>'+(en?eng:tr)+'</small></a>').join('')}
+render();document.addEventListener('change',e=>{if(e.target.matches('#language,#explore-language,#sponsor-language'))render()});
+nav.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const key=a.dataset.menu;if(key==='request'&&typeof openRequest==='function'){e.preventDefault();openRequest()}});
+if(main&&q.get('talep')==='1'&&typeof openRequest==='function'){q.delete('talep');history.replaceState(null,'',path+'?'+q.toString());if(typeof ready!=='undefined'&&!ready)document.addEventListener('hotel-data-ready',()=>openRequest(),{once:true});else openRequest()}
+if(typeof openDiscover==='function')openDiscover=()=>location.assign('/kesfet'+suffix+'#explore-geography');
+document.addEventListener('click',e=>{const a=e.target.closest('a[href]');if(!a||a.dataset.menu)return;const u=new URL(a.href,location.href);if(u.origin===location.origin&&u.pathname==='/kesfet'&&!u.hash)a.hash='explore-geography'});
+const filters=document.querySelector('#explore-geography');if(filters&&location.hash==='#explore-geography'){const scroll=()=>requestAnimationFrame(()=>filters.scrollIntoView({block:'start'}));if(filters.children.length)scroll();else{const observer=new MutationObserver(()=>{if(filters.children.length){observer.disconnect();scroll()}});observer.observe(filters,{childList:true})}}
+})();

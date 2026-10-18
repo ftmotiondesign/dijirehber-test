@@ -1,0 +1,18 @@
+import {Window} from 'happy-dom';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync('guest.html','utf8'),demo=JSON.parse(fs.readFileSync('hotel-demo-data.json','utf8'));
+async function boot(surface){
+ const window=new Window({url:'https://test.example/'+(surface==='guide'?'rehber':surface==='admin'?'yonetim':surface==='guide-admin'?'yonetim/rehber':'')+'?oda=101',settings:{disableJavaScriptEvaluation:true,disableCSSFileLoading:true,disableJavaScriptFileLoading:true,disableComputedStyleRendering:true}});
+ window.HTMLElement.prototype.scrollIntoView=function(){};window.scrollTo=()=>{};
+ const errors=[];window.addEventListener('error',e=>errors.push(e.message));
+ window.fetch=async(url,opts)=>new Response(JSON.stringify(opts?.method==='POST'?{ok:true}:{role:'admin',settings:{hotel:'Kıyı Evi',wifi:'Test',password:'1234',breakfast:'08–10',notice:''},guide:demo,sponsors:[],requests:[],metrics:{opens:1,sponsorClicks:0,codes:0},members:[],stays:[]}),{headers:{'Content-Type':'application/json'}});
+ window.document.write(html.replace('<body data-surface="guest">','<body data-surface="'+surface+'">').replace(/<script>[\s\S]*?<\/script>/g,''));
+ if(!vm.isContext(window))vm.createContext(window);
+ for(const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g))vm.runInContext(match[1],window);
+ await new Promise(r=>setTimeout(r,20));
+ return {window,errors,eval:code=>vm.runInContext(code,window)};
+}
+let app=await boot('guide');assert.deepEqual(app.errors,[]);assert.equal(app.window.document.querySelectorAll('.facility-card').length,30);app.eval("filterHotel('Havuz & Plaj')");assert.equal(app.window.document.querySelectorAll('.facility-card').length,4);app.eval("activityDetail('outdoor-pool')");assert.ok(app.window.document.querySelector('#body').textContent.includes('08.00 – 19.00'));app.window.document.querySelector('#activity-request').click();assert.equal(app.window.document.querySelector('#request').elements.room.value,'101');assert.ok(app.window.document.querySelector('#request').elements.note.value.includes('Açık havuz'));app.eval("setLanguage('en')");assert.ok(app.window.document.querySelector('.hotel-hero h1').textContent.includes('Set your holiday'));await app.window.happyDOM.close();
+app=await boot('admin');assert.equal(app.window.document.querySelector('#guide-editor-link').getAttribute('href'),'/yonetim/rehber');assert.equal(app.window.document.querySelector('#guide-management').closest('main').id,'guide-admin-view');await app.window.happyDOM.close();app=await boot('guide-admin');assert.equal(app.window.document.querySelector('#guide-admin-view').hidden,false);assert.equal(app.window.document.querySelector('#admin-view').hidden,true);assert.deepEqual(app.errors,[]);assert.equal(app.window.document.querySelectorAll('.editor-card').length,30);app.window.document.querySelector('[data-guide-edit="outdoor-pool"]').click();assert.equal(app.window.document.querySelector('#guide-form').elements.namedItem('title').value,'Açık havuz');assert.equal(app.window.document.querySelector('#guide-form').elements.namedItem('location').value,'Bahçe katı · Ana havuz');assert.equal(app.window.document.querySelector('#guide-form').elements.namedItem('image').value,'/photos/pool.jpg');app.window.document.querySelector('[data-template="massage"]').click();assert.equal(app.window.document.querySelector('#guide-form').elements.namedItem('id').value,'');assert.equal(app.window.document.querySelector('#guide-form').elements.namedItem('category').value,'Spa & Bakım');await app.window.happyDOM.close();console.log('PASS: guest guide cards, filters, photo detail, room-request handoff, language switch, admin edit and template flow');

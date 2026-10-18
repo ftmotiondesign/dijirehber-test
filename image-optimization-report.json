@@ -1,0 +1,62 @@
+[
+  {
+    "name": "music.jpg",
+    "before": 106558,
+    "after": 62737,
+    "small": 7219
+  },
+  {
+    "name": "spa.jpg",
+    "before": 114898,
+    "after": 75573,
+    "small": 12960
+  },
+  {
+    "name": "resort.jpg",
+    "before": 237567,
+    "after": 160769,
+    "small": 27772
+  },
+  {
+    "name": "pool.jpg",
+    "before": 217129,
+    "after": 95281,
+    "small": 15733
+  },
+  {
+    "name": "kids.jpg",
+    "before": 112706,
+    "after": 76495,
+    "small": 16940
+  },
+  {
+    "name": "beach.jpg",
+    "before": 132449,
+    "after": 85028,
+    "small": 13921
+  },
+  {
+    "name": "fitness.jpg",
+    "before": 170026,
+    "after": 117933,
+    "small": 27187
+  },
+  {
+    "name": "yoga.jpg",
+    "before": 77493,
+    "after": 50377,
+    "small": 11247
+  },
+  {
+    "name": "restaurant.jpg",
+    "before": 242177,
+    "after": 160814,
+    "small": 30060
+  },
+  {
+    "name": "breakfast.jpg",
+    "before": 133789,
+    "after": 92367,
+    "small": 19369
+  }
+]

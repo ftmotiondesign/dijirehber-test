@@ -1,0 +1,11 @@
+import {hospitalityContext} from './hospitality-tenant';
+import html from './guest-html';
+export async function panel(request:Request,surface:'admin'|'staff'|'guide-admin'){
+ const id=request.headers.get('oai-authenticated-user-id'),email=request.headers.get('oai-authenticated-user-email')?.toLowerCase();
+ const path=surface==='guide-admin'?'/yonetim/rehber':surface==='admin'?'/yonetim':'/personel';
+ if(!id||!email)return Response.redirect(new URL('/signin-with-chatgpt?return_to='+encodeURIComponent(path+new URL(request.url).search),request.url),302);
+ let allowed=false;
+ try{const context=await hospitalityContext(request);allowed=context.allowed;if(allowed&&!new URL(request.url).searchParams.has('otel')){const url=new URL(request.url);url.searchParams.set('otel',context.id);return Response.redirect(url,302)}if(!allowed&&surface==='staff'){const member=await context.db.prepare('SELECT role FROM members WHERE email=?').bind(email).first<{role:string}>();allowed=member?.role==='staff'}}catch{}
+ if(!allowed)return new Response('<!doctype html><html lang="tr"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Erişim yetkisi gerekiyor</title><body style="font:18px system-ui;max-width:500px;margin:60px auto;padding:25px;color:#193f3c"><h1>Erişim yetkisi gerekiyor</h1><p>Bu bölüm yalnızca yetkili personel ve yönetici içindir.</p><a href="/">Misafir rehberini aç</a> · <a href="/signout-with-chatgpt?return_to=%2F">Hesap değiştir</a></body></html>',{status:403,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
+ return new Response(html.replace('<body data-surface="guest">','<body data-surface="'+surface+'">'),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})
+}

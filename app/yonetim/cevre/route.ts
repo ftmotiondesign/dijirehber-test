@@ -1,0 +1,3 @@
+import html from '../../explore-html';
+import {exploreContext} from '../../explore-tenants';
+export async function GET(r:Request){if(!r.headers.get('oai-authenticated-user-id')||!r.headers.get('oai-authenticated-user-email'))return Response.redirect(new URL('/signin-with-chatgpt?return_to='+encodeURIComponent(new URL(r.url).pathname+new URL(r.url).search),r.url),302);try{await exploreContext(r,true)}catch{return new Response('Bu konaklama için yönetici yetkisi gerekiyor.',{status:403})}return new Response(html.replace('data-explore-surface="guest"','data-explore-surface="admin"'),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})}
