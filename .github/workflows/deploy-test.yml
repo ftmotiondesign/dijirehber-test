@@ -29,6 +29,7 @@ jobs:
       - name: Validate Cloudflare test bindings
         env:
           DIJI_TEST_D1_DATABASE_ID: ${{ vars.DIJI_TEST_D1_DATABASE_ID }}
+          DIJI_TEST_R2_BUCKET_NAME: ${{ vars.DIJI_TEST_R2_BUCKET_NAME }}
         run: node scripts/prepare-test-worker.mjs
       - name: Deploy ONLY to isolated test Worker
         env:
