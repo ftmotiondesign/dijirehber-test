@@ -8,11 +8,14 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: ${{ vars.DIJI_DEPLOY_READY == 'true' }}
     runs-on: ubuntu-latest
     environment: dijirehber-test
     timeout-minutes: 25
     steps:
+      - name: Check explicit test release approval
+        env:
+          DIJI_DEPLOY_READY: ${{ vars.DIJI_DEPLOY_READY }}
+        run: test "$DIJI_DEPLOY_READY" = 'true' || { echo 'Release not approved'; exit 1; }
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v7
         with:
