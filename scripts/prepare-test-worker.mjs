@@ -8,6 +8,8 @@ if (!databaseId || !/^[0-9a-f-]{36}$/i.test(databaseId)) {
   throw new Error("Set DIJI_TEST_D1_DATABASE_ID to the test database UUID.");
 }
 config.name = "dijirehber-test";
+// Preserve variables and secrets set in Cloudflare dashboard on scripted deploys.
+config.keep_vars = true;
 config.d1_databases = [{
   binding: "DB",
   database_name: "dijirehber-test-db",
