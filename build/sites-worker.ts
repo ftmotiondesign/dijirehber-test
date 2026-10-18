@@ -6,13 +6,22 @@ import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 export default {
   async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
     if (!import.meta.env.DEV) {
-      // Temporary guest-only public preview until API and tenant authorization audit completes.
+      // Verified, invitation-only platform administrator preview.
       const path = new URL(request.url).pathname;
-      if (/^\/(yonetim|personel|ortaklik|giris|davet|cikis)(\/|$)/.test(path)) return new Response("Yönetim girişi test sürümünde geçici olarak kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
-      if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) return new Response("Test sürümünde kayıt ve değişiklik işlemleri kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
-      const result = await independentAuth(request, env);
-      if (result.response) return result.response;
-      request = result.request!;
+      const blocked = /^\/(personel|ortaklik)(\/|$)/.test(path);
+      if (blocked) return new Response("Bu yönetim bölümü henüz etkin değil.", { status: 503, headers: { "Cache-Control": "no-store" } });
+      const auth = await independentAuth(request, env);
+      if (auth.response) return auth.response;
+      request = auth.request!;
+      const isAdmin = request.headers.get("oai-authenticated-user-id") === "2496b48a-6d9e-4151-aa05-7a01fbbb38df" &&
+        request.headers.get("oai-authenticated-user-email")?.toLowerCase() === "ftmotiondesign@gmail.com";
+      const isPublic = request.method === "GET" || request.method === "HEAD" || request.method === "OPTIONS";
+      // Maintain read-only guest preview, except authenticated admin write APIs.
+      if (!isPublic && !isAdmin) return new Response("Yazma işlemleri bu test sürümünde kapalı.", { status: 403, headers: { "Cache-Control": "no-store" } });
+      if (/^\/yonetim(\/|$)/.test(path) && !isAdmin) return new Response("Yönetici yetkisi gerekiyor.", { status: 403, headers: { "Cache-Control": "no-store" } });
+      if (!isAdmin && /^\/api\/(data|explore-hotels|explore|sponsors|guide-image|logo|local-services)(\/|$)/.test(path) && request.method !== "GET") {
+        return new Response("Bu işlemi yalnızca yönetici yapabilir.", { status: 403 });
+      }
     }
     let binding = ctx.props?.CONNECTORS;
     if (import.meta.env.DEV && !binding && env.CONNECTORS) {
