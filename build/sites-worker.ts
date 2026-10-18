@@ -1,22 +1,16 @@
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
+import { independentAuth } from "../lib/independent-auth";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 
 export default {
-  fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
-    // The hosted demo authenticates at the Sites gateway. A standalone Worker
-    // must not trust browser-supplied identity headers. Enable independent login
-    // only after a server-verified session provider is integrated.
+  async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
     if (!import.meta.env.DEV) {
-      const headers = new Headers(request.headers);
-      for (const key of Array.from(headers.keys())) {
-        if (key.startsWith("oai-authenticated-user-")) headers.delete(key);
-      }
-      request = new Request(request, { headers });
+      const result = await independentAuth(request, env);
+      if (result.response) return result.response;
+      request = result.request!;
     }
     let binding = ctx.props?.CONNECTORS;
-    // Local preview emulates the same request-scoped capability. This branch and
-    // the auxiliary service binding are absent from production builds.
     if (import.meta.env.DEV && !binding && env.CONNECTORS) {
       const preview = env.CONNECTORS;
       const expiresAt = Date.now() + 60_000;
@@ -26,9 +20,7 @@ export default {
           return preview.getContext?.() ?? { status: "binding_unavailable" };
         },
         async invoke(connectorId, actionName, args) {
-          if (Date.now() >= expiresAt) {
-            return { status: "request_context_expired", message: "This request has expired. Please try again." };
-          }
+          if (Date.now() >= expiresAt) return { status: "request_context_expired", message: "This request has expired. Please try again." };
           return preview.invoke(connectorId, actionName, args);
         },
       };
