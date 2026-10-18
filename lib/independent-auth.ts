@@ -47,13 +47,14 @@ const GOOGLE_STATE_COOKIE="diji_google_state";
 const GOOGLE_VERIFIER_COOKIE="diji_google_verifier";
 function shortCookie(name:string,value:string,seconds:number){return name+"="+encodeURIComponent(value)+"; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age="+seconds}
 function cleanupCookies(headers:Headers){headers.append("Set-Cookie",shortCookie(GOOGLE_STATE_COOKIE,"",0));headers.append("Set-Cookie",shortCookie(GOOGLE_VERIFIER_COOKIE,"",0))}
-function randomUrlSafe(n:number){const bytes=crypto.getRandomValues(new Uint8Array(n));return btoa(String.fromCharCode(...bytes)).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/,"")}
+function randomUrlSafe(n:number){const bytes=crypto.getRandomValues(new Uint8Array(n));return btoa(String.fromCharCode(...bytes)).replace(/[+]/g,"-").replace(/[/]/g,"_").replace(/=+$/,"")}
 function getCookie(request:Request,name:string){const raw=(request.headers.get("cookie")||"").split(";").map(s=>s.trim()).find(s=>s.startsWith(name+"="));try{return raw?decodeURIComponent(raw.slice(name.length+1)):null}catch{return null}}
-async function challenge(verifier:string){const hash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier));return btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/,"")}
+async function challenge(verifier:string){const hash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier));return btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/[+]/g,"-").replace(/[/]/g,"_").replace(/=+$/,"")}
 async function googleStart(request:Request,env:any){
  const cfg=config(env);if(!cfg)return page("Google giriş bağlantısı henüz yapılandırılmadı.");
  const url=new URL(request.url),state=randomUrlSafe(32),verifier=randomUrlSafe(48);
  const destination=new URL(cfg.url+"/auth/v1/authorize");
+ destination.searchParams.set("scopes","email profile");
  destination.searchParams.set("provider","google");
  destination.searchParams.set("redirect_to",url.origin+"/auth/google/callback");
  destination.searchParams.set("code_challenge",await challenge(verifier));
@@ -69,15 +70,15 @@ async function googleCallback(request:Request,env:any){
  const error=url.searchParams.get("error");
  const resultHeaders=new Headers({"Cache-Control":"no-store"});
  cleanupCookies(resultHeaders);
- if(error||!cfg||!verifier||!marker||!url.searchParams.get("code"))return redirect("/giris?google_error=1");
+ if(error||!cfg||!verifier||!marker||!url.searchParams.get("code")){resultHeaders.set("Location","/giris?google_error=1");return new Response(null,{status:303,headers:resultHeaders})}
  try{
   const r=await fetch(cfg.url+"/auth/v1/token?grant_type=pkce",{method:"POST",headers:{"Content-Type":"application/json","apikey":cfg.key},body:JSON.stringify({auth_code:url.searchParams.get("code"),code_verifier:verifier}),signal:AbortSignal.timeout(6000)});
-  if(!r.ok)return redirect("/giris?google_error=1");
+  if(!r.ok){resultHeaders.set("Location","/giris?google_error=1");return new Response(null,{status:303,headers:resultHeaders})}
   const data:any=await r.json();
   const user=data.access_token?await lookup(data.access_token,env):null;
   // Never grant administrator privileges based solely on Google email.
   // The administrator UID must match the explicitly approved Supabase identity.
-  if(!user||user.id!=="2496b48a-6d9e-4151-aa05-7a01fbbb38df"||user.email!=="ftmotiondesign@gmail.com")return redirect("/giris?google_error=1");
+  if(!user||user.id!=="2496b48a-6d9e-4151-aa05-7a01fbbb38df"||user.email!=="ftmotiondesign@gmail.com"){resultHeaders.set("Location","/giris?google_error=1");return new Response(null,{status:303,headers:resultHeaders})}
   resultHeaders.set("Location","/yonetim");
   resultHeaders.append("Set-Cookie",cookie(data.access_token,Math.min(3600,Number(data.expires_in)||3600)));
   return new Response(null,{status:303,headers:resultHeaders});
