@@ -8,8 +8,8 @@ export default {
     if (!import.meta.env.DEV) {
       // Temporary guest-only public preview until API and tenant authorization audit completes.
       const path = new URL(request.url).pathname;
-      if (/^\/(yonetim|personel|ortaklik|giris|davet|cikis)(\/|$)/.test(path)) return new Response("Yönetim girişi test sürümünde geçici olarak kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
-      if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) return new Response("Test sürümünde kayıt ve değişiklik işlemleri kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
+      if (/^\/(yonetim|personel|ortaklik|davet)(\/|$)/.test(path)) return new Response("Yönetim girişi test sürümünde geçici olarak kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
+      if (!["GET", "HEAD", "OPTIONS"].includes(request.method) && !(request.method === "POST" && path === "/cikis")) return new Response("Test sürümünde kayıt ve değişiklik işlemleri kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
       const result = await independentAuth(request, env);
       if (result.response) return result.response;
       request = result.request!;
