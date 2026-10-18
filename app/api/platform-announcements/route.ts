@@ -13,7 +13,7 @@ const data=JSON.parse(raw),action=data.action;
 if(!['create','toggle'].includes(action))return out({error:'Geçersiz işlem.'},400);
 const {items,previous}=await load();if(items.length>=200)return out({error:'Duyuru sınırına ulaşıldı.'},409);
 if(action==='create'){const title=String(data.title||'').trim(),body=String(data.body||'').trim(),audience=data.audience;if(!title||title.length>120||!body||body.length>2000||!['all','selected'].includes(audience))return out({error:'Başlık veya içerik geçersiz.'},400);
-const hotelIds=audience==='all'?[]:[...new Set(data.hotelIds||[])];if(!Array.isArray(data.hotelIds)&&audience==='selected'||hotelIds.length>100||audience==='selected'&&!hotelIds.length||hotelIds.some((x:any)=>typeof x!=='string'||!/^[a-z0-9-]{3,80}$/.test(x)))return out({error:'Otel seçimi geçersiz.'},400);
+const hotelIds=audience==='all'?[]:Array.isArray(data.hotelIds)?[...new Set(data.hotelIds)]:[];if(!Array.isArray(data.hotelIds)&&audience==='selected'||hotelIds.length>100||audience==='selected'&&!hotelIds.length||hotelIds.some((x:any)=>typeof x!=='string'||!/^[a-z0-9-]{3,80}$/.test(x)))return out({error:'Otel seçimi geçersiz.'},400);
 for(const id of hotelIds)await hotelRecord(id);
 items.unshift({id:crypto.randomUUID(),title,body,audience,hotelIds,active:true,createdAt:new Date().toISOString()});
 }else{const item=items.find((x:any)=>x.id===data.id);if(!item)return out({error:'Duyuru bulunamadı.'},404);item.active=!item.active}
