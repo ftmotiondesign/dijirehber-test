@@ -8,11 +8,16 @@ export default {
     if (!import.meta.env.DEV) {
       // Temporary guest-only public preview until API and tenant authorization audit completes.
       const path = new URL(request.url).pathname;
-      if (/^\/(yonetim|personel|ortaklik|davet)(\/|$)/.test(path)) return new Response("Yönetim girişi test sürümünde geçici olarak kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
+      if (/^\/(personel|ortaklik|davet)(\/|$)/.test(path)) return new Response("Yönetim girişi test sürümünde geçici olarak kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
       if (!["GET", "HEAD", "OPTIONS"].includes(request.method) && !(request.method === "POST" && path === "/cikis")) return new Response("Test sürümünde kayıt ve değişiklik işlemleri kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
       const result = await independentAuth(request, env);
       if (result.response) return result.response;
       request = result.request!;
+      // Only the pre-approved Supabase user may view the administrator panel.
+      if (/^\/yonetim(\/|$)/.test(path)) {
+        const authorized = request.headers.get("oai-authenticated-user-id") === "2496b48a-6d9e-4151-aa05-7a01fbbb38df" && request.headers.get("oai-authenticated-user-email")?.toLowerCase() === "ftmotiondesign@gmail.com";
+        if (!authorized) return new Response("Yönetici yetkisi gerekiyor.", { status: 403, headers: { "Cache-Control": "no-store" } });
+      }
     }
     let binding = ctx.props?.CONNECTORS;
     if (import.meta.env.DEV && !binding && env.CONNECTORS) {
