@@ -105,8 +105,8 @@ export async function independentAuth(request:Request,env:any):Promise<{response
    return {response:redirect("/yonetim",cookie(data.access_token,Math.min(3600,Number(data.expires_in)||3600)))};
   }catch{return {response:page("Giriş hizmetine ulaşılamıyor.")}}
  }
- if(url.pathname==="/cikis"&&request.method==="POST"){
-  if(request.headers.get("origin")!==url.origin)return {response:new Response("Forbidden",{status:403})};
+ if(url.pathname==="/cikis"&&(request.method==="GET"||request.method==="POST")){
+  if(request.method==="POST"&&request.headers.get("origin")!==url.origin)return {response:new Response("Forbidden",{status:403})};
   return {response:redirect(LOGIN,cookie("",0))};
  }
  // Always discard identity headers supplied by the browser.
