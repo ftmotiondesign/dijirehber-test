@@ -1,2 +1,2 @@
 import html from './guest-html';
-export function GET(r:Request){return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})}
+export function GET(r:Request){const u=new URL(r.url),hotel=u.searchParams.get('otel')||'kiyi-evi';const link='<a href="/menu?otel='+encodeURIComponent(hotel)+'" style="position:fixed;bottom:86px;right:16px;z-index:1000;background:#193f3c;color:white;padding:13px 18px;border-radius:999px;box-shadow:0 5px 18px #0003;text-decoration:none;font:600 14px system-ui">🍽 Menü & Sipariş</a>';return new Response(html.replace('</body>',link+'</body>'),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})}
