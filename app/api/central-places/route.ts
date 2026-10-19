@@ -1,6 +1,6 @@
 import {env} from 'cloudflare:workers';
 const KEY='central_tourism_places_v1';
-const seed=[
+export const seed=[
 {id:'canakkale-assos',name:'Assos Antik Kenti',city:'Çanakkale',district:'Ayvacık',category:'Tarih & kültür',lat:39.4885,lng:26.3375},
 {id:'canakkale-behramkale',name:'Behramkale',city:'Çanakkale',district:'Ayvacık',category:'Köyler',lat:39.4914,lng:26.3331},
 {id:'canakkale-kadirga',name:'Kadırga Koyu',city:'Çanakkale',district:'Ayvacık',category:'Plajlar',lat:39.4752,lng:26.3608},
