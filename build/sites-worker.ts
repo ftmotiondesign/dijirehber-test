@@ -11,7 +11,7 @@ export default {
       if (/^\/(personel|ortaklik|davet)(\/|$)/.test(path)) return new Response("Yönetim girişi test sürümünde geçici olarak kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
       const write = !["GET", "HEAD", "OPTIONS"].includes(request.method);
       const hotelWrite = request.method === "POST" && (path === "/api/explore-hotels" || path === "/api/platform-announcements" || path === "/api/platform-control" || path === "/api/sponsors" || path === "/api/sponsor-image" || path === "/api/central-places" || path === "/api/admin/tourism-reset" || path === "/api/explore");
-      if (write && !hotelWrite && !(request.method === "POST" && path === "/cikis")) return new Response("Test sürümünde diğer değişiklik işlemleri kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
+      if (write && !hotelWrite && !(request.method === "POST" && path === "/cikis")) return path.startsWith("/api/") ? Response.json({ error: "Test sürümünde diğer değişiklik işlemleri kapalı.", code: "TEST_WRITE_DISABLED" }, { status: 503, headers: { "Cache-Control": "no-store" } }) : new Response("Test sürümünde diğer değişiklik işlemleri kapalı.", { status: 503, headers: { "Cache-Control": "no-store" } });
       const result = await independentAuth(request, env);
       if (result.response) return result.response;
       request = result.request!;
