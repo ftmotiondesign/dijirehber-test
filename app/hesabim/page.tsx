@@ -6,6 +6,7 @@ const KEY="sb_publishable_X-3nUcyyhAxMRpzbbSuByw_Kzji31l0";
 type Mode="login"|"register"|"forgot"|"recover";
 type Session={access_token:string;refresh_token?:string;expires_at?:number;user?:{email?:string}};
 const headers={"apikey":KEY,"Content-Type":"application/json"};
+function returnUrl(){return location.origin+"/hesabim";}
 async function request(path:string,body:unknown,token?:string){
  const res=await fetch(API+path,{method:"POST",headers:{...headers,...(token?{Authorization:"Bearer "+token}:{})},body:JSON.stringify(body)});
  const data=await res.json().catch(()=>({}));
@@ -18,17 +19,17 @@ export default function Hesabim(){
  useEffect(()=>{
   const hash=new URLSearchParams(location.hash.slice(1));
   if(hash.get("type")==="recovery"&&hash.get("access_token")){setSession({access_token:hash.get("access_token")!,refresh_token:hash.get("refresh_token")||undefined});setMode("recover");history.replaceState(null,"",location.pathname);}
-  else{try{const saved=sessionStorage.getItem("dijirehber-visitor-session");if(saved)setSession(JSON.parse(saved));}catch{}}
+  else{if(hash.get("error_description"))setMessage(hash.get("error_description")||"Bağlantı geçersiz.");try{const saved=sessionStorage.getItem("dijirehber-visitor-session");if(saved){const s:Session=JSON.parse(saved);if(s.expires_at&&s.expires_at>Math.floor(Date.now()/1000)+30)setSession(s);else sessionStorage.removeItem("dijirehber-visitor-session");}}catch{}}
  },[]);
  async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage("");
   try{
    if(mode==="register"){
     if(password.length<8)throw new Error("Şifre en az 8 karakter olmalı.");
     if(password!==repeat)throw new Error("Şifreler eşleşmiyor.");
-    await request("/signup",{email,password,data:{full_name:name},gotrue:true});
+    await request("/signup",{email,password,data:{full_name:name},email_redirect_to:returnUrl()});
     setMessage("Kayıt talebiniz alındı. E-postanıza gelen doğrulama bağlantısını açın.");setMode("login");
    }else if(mode==="forgot"){
-    await request("/recover",{email});setMessage("Hesap kayıtlıysa şifre sıfırlama bağlantısı e-postanıza gönderildi.");
+    await request("/recover",{email,redirect_to:returnUrl()});setMessage("Hesap kayıtlıysa şifre sıfırlama bağlantısı e-postanıza gönderildi.");
    }else if(mode==="recover"){
     if(password.length<8)throw new Error("Yeni şifre en az 8 karakter olmalı.");
     const res=await fetch(API+"/user",{method:"PUT",headers:{...headers,Authorization:"Bearer "+session?.access_token},body:JSON.stringify({password})});
